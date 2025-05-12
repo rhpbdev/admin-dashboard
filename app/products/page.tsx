@@ -1,17 +1,21 @@
 import { getProducts } from '@/lib/db';
 
-type SearchParams = Partial<{
-  q: string;
-  offset: string;
-}>;
+type ProductsPageSearchParams = { [key: string]: string | string[] };
 
 export default async function ProductsPage({
   searchParams
 }: {
-  searchParams?: SearchParams;
+  searchParams?: ProductsPageSearchParams;
 }) {
-  const search = searchParams?.q ?? '';
-  const offset = parseInt(searchParams?.offset ?? '0', 10);
+  const search = Array.isArray(searchParams?.q)
+    ? searchParams.q[0]
+    : (searchParams?.q ?? '');
+
+  const offsetStr = Array.isArray(searchParams?.offset)
+    ? searchParams.offset[0]
+    : (searchParams?.offset ?? '0');
+
+  const offset = parseInt(offsetStr, 10);
 
   const { products } = await getProducts(search, offset);
 
