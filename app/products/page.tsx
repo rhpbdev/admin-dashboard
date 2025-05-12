@@ -1,11 +1,17 @@
 import { getProducts } from '@/lib/db';
 
-export default async function ProductsPage(props: {
-  searchParams: { q?: string; offset?: string };
-}) {
+type SearchParams = Partial<{
+  q: string;
+  offset: string;
+}>;
 
-  const search = props.searchParams.q ?? '';
-  const offset = parseInt(props.searchParams.offset ?? '0', 10);
+export default async function ProductsPage({
+  searchParams
+}: {
+  searchParams?: SearchParams;
+}) {
+  const search = searchParams?.q ?? '';
+  const offset = parseInt(searchParams?.offset ?? '0', 10);
 
   const { products } = await getProducts(search, offset);
 
