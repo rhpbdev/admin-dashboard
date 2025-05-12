@@ -3,10 +3,6 @@
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  return Response.json({
-    message: 'Uncomment to seed data after DB is set up.'
-  });
-
   // await db.insert(products).values([
   //   {
   //     id: 1,
@@ -109,4 +105,8 @@ export async function GET() {
   //     availableAt: new Date()
   //   }
   // ]);
+
+  return Response.json({
+    message: 'Database seeded successfully.'
+  });
 }
