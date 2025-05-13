@@ -396,7 +396,7 @@ export const sampleProgramTemplates: YourSpecificTemplateType[] = [
           height: 250, // Scaled: 3694.2494*0.25, 1825.3796*0.25, 300*0.25, 300*0.25
           // Keep original src, angle, scaleX/Y - let Fabric handle scaling on load based on new width/height if possible
           angle: 4.7812,
-          src: 'http://localhost:3000/dove-01.png', // Use a placeholder path or ensure this exists
+          src: '/dove-01.png', // Use a placeholder path or ensure this exists
           name: 'dove_image_placeholder'
           // NOTE: Loading external images or large base64 might be slow. Consider placeholders first.
         },
@@ -752,7 +752,7 @@ export const sampleProgramTemplates: YourSpecificTemplateType[] = [
           height: 250, // Scaled: 3694.2494*0.25, 1825.3796*0.25, 300*0.25, 300*0.25
           // Keep original src, angle, scaleX/Y - let Fabric handle scaling on load based on new width/height if possible
           angle: 4.7812,
-          src: 'http://localhost:3000/dove-01.png', // Use a placeholder path or ensure this exists
+          src: '/dove-01.png', // Use a placeholder path or ensure this exists
           name: 'dove_image_placeholder'
           // NOTE: Loading external images or large base64 might be slow. Consider placeholders first.
         },
@@ -1108,7 +1108,7 @@ export const sampleProgramTemplates: YourSpecificTemplateType[] = [
           height: 250, // Scaled: 3694.2494*0.25, 1825.3796*0.25, 300*0.25, 300*0.25
           // Keep original src, angle, scaleX/Y - let Fabric handle scaling on load based on new width/height if possible
           angle: 4.7812,
-          src: 'http://localhost:3000/dove-01.png', // Use a placeholder path or ensure this exists
+          src: '/dove-01.png', // Use a placeholder path or ensure this exists
           name: 'dove_image_placeholder'
           // NOTE: Loading external images or large base64 might be slow. Consider placeholders first.
         },

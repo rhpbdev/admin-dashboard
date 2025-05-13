@@ -56,7 +56,7 @@ export default function CanvasApp({ templateData }: CanvasAppProps) {
   const [showTemplates, setShowTemplates] = useState(false);
   const { data: session } = useSession();
 
-  const resizeCanvas = () => {
+  const resizeCanvasAction = () => {
     if (!canvasRef.current || !canvas) return;
     const wrapper = canvasRef.current.parentElement;
     if (!wrapper) return;
@@ -82,8 +82,8 @@ export default function CanvasApp({ templateData }: CanvasAppProps) {
       backgroundColor: '#ffffff'
     });
     setCanvas(initCanvas);
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+    resizeCanvasAction();
+    window.addEventListener('resize', resizeCanvasAction);
 
     const onObjectMoving = (event: ObjectMovingEvent) => {
       const target = event.target;
@@ -109,7 +109,7 @@ export default function CanvasApp({ templateData }: CanvasAppProps) {
     initCanvas.on('mouse:up', onModificationOrMouseUp);
 
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener('resize', resizeCanvasAction);
       initCanvas.off('object:moving', onObjectMoving);
       initCanvas.off('object:modified', onModificationOrMouseUp);
       initCanvas.off('mouse:up', onModificationOrMouseUp);
@@ -145,7 +145,11 @@ export default function CanvasApp({ templateData }: CanvasAppProps) {
           canvas.clear();
           canvas.backgroundColor = newBg;
 
-          canvas.loadFromJSON(templateData.fabricJSON, () => {
+          const cleanedJSON = templateData.fabricJSON.replaceAll(
+            'http://localhost:3000',
+            ''
+          );
+          canvas.loadFromJSON(cleanedJSON, () => {
             const bgImg = canvas.backgroundImage;
             if (bgImg instanceof FabricImage) {
               const imgElement = bgImg.getElement();
@@ -176,7 +180,7 @@ export default function CanvasApp({ templateData }: CanvasAppProps) {
               }
             }
             canvas.renderAll();
-            resizeCanvas();
+            resizeCanvasAction();
           });
         } catch (err) {
           console.error('Error loading template JSON:', err);
@@ -185,20 +189,20 @@ export default function CanvasApp({ templateData }: CanvasAppProps) {
           canvas.backgroundColor = '#ffffff';
           canvas.setDimensions({ width: 500, height: 500 });
           canvas.renderAll();
-          resizeCanvas();
+          resizeCanvasAction();
         }
       } else {
         canvas.getObjects().forEach((o) => canvas.remove(o));
         canvas.backgroundImage = undefined;
         canvas.renderAll();
-        resizeCanvas();
+        resizeCanvasAction();
       }
     } else {
       canvas.clear();
       canvas.setDimensions({ width: 500, height: 500 });
       canvas.backgroundColor = '#ffffff';
       canvas.renderAll();
-      resizeCanvas();
+      resizeCanvasAction();
     }
   }, [canvas, templateData]);
 
@@ -297,7 +301,7 @@ export default function CanvasApp({ templateData }: CanvasAppProps) {
           canvas={canvas}
           session={session}
           templateId={templateData?.id}
-          resizeCanvas={resizeCanvas}
+          resizeCanvasAction={resizeCanvasAction}
         />
       </div>
 

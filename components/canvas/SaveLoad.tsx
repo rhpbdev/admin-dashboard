@@ -10,7 +10,7 @@ interface SaveLoadProps {
   canvas: Canvas | null;
   session: { user?: { id?: string } } | null;
   templateId?: string;
-  resizeCanvas: () => void;
+  resizeCanvasAction: () => void;
   autoSave?: boolean;
   debounceDelay?: number;
 }
@@ -19,7 +19,7 @@ export default function SaveLoad({
   canvas,
   session,
   templateId,
-  resizeCanvas
+  resizeCanvasAction
 }: SaveLoadProps) {
   // Get unique key for localStorage
   const getSaveKey = useCallback(() => {
@@ -72,13 +72,13 @@ export default function SaveLoad({
     if (saved) {
       canvas.loadFromJSON(saved, () => {
         canvas.renderAll();
-        resizeCanvas();
+        resizeCanvasAction();
         toast.success('Design loaded');
       });
     } else {
       toast.info('No saved design found');
     }
-  }, [canvas, getSaveKey, resizeCanvas, safeGetItem]);
+  }, [canvas, getSaveKey, resizeCanvasAction, safeGetItem]);
 
   return (
     <div className="flex flex-col space-y-2">
