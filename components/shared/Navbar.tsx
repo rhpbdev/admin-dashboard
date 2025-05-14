@@ -20,6 +20,13 @@ const Navbar = () => {
             variant="ghost"
             className="text-slate-700 hover:text-slate-900"
           >
+            <Link href="/products">Products</Link>
+          </Button>
+          <Button
+            asChild
+            variant="ghost"
+            className="text-slate-700 hover:text-slate-900"
+          >
             <Link href="/templates">Templates</Link>
           </Button>
 

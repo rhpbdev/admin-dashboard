@@ -1,25 +1,18 @@
 import { Line } from 'fabric';
 
 const snappingDistance = 10;
-
-const VISUAL_GUIDELINE_STROKE_WIDTH = 5; // Try starting with 3px, 5px, or even 10px logical units
-const VISUAL_GUIDELINE_DASH_VALUE = 15; // Make dash values larger too, e.g., 3-5x strokeWidth
+const margin = 20; // 👈 adjust this to your desired margin snap distance
 
 export const handleObjectMoving = (canvas, obj, guidelines, setGuidelines) => {
-  const canvasWidth = canvas.getWidth(); // Correct Fabric.js way
-  const canvasHeight = canvas.getHeight(); // Correct Fabric.js way
+  const canvasWidth = canvas.getWidth();
+  const canvasHeight = canvas.getHeight();
 
-  // object bounds
   const left = obj.left;
   const top = obj.top;
   const right = left + obj.width * obj.scaleX;
   const bottom = top + obj.height * obj.scaleY;
-
-  // object center
   const centerX = left + (obj.width * obj.scaleX) / 2;
   const centerY = top + (obj.height * obj.scaleY) / 2;
-
-  // canvas mid‐points
   const centerCanvasX = canvasWidth / 2;
   const centerCanvasY = canvasHeight / 2;
 
@@ -28,90 +21,47 @@ export const handleObjectMoving = (canvas, obj, guidelines, setGuidelines) => {
 
   let snapped = false;
 
-  // —— Edge snapping (unchanged) —— //
+  // 👉 Edge snapping
+  snapped =
+    snapToEdge(
+      canvas,
+      obj,
+      newGuidelines,
+      left,
+      top,
+      right,
+      bottom,
+      canvasWidth,
+      canvasHeight
+    ) || snapped;
 
-  if (Math.abs(left) < snappingDistance) {
-    obj.set({ left: 0 });
-    if (!guidelineExists(canvas, 'vertical-left')) {
-      const line = createVerticalGuideline(canvas, 0, 'vertical-left');
-      newGuidelines.push(line);
-      canvas.add(line);
-    }
-    snapped = true;
-  }
+  // 👉 Margin snapping
+  snapped =
+    snapToMargins(
+      canvas,
+      obj,
+      newGuidelines,
+      left,
+      top,
+      right,
+      bottom,
+      canvasWidth,
+      canvasHeight,
+      margin
+    ) || snapped;
 
-  if (Math.abs(top) < snappingDistance) {
-    obj.set({ top: 0 });
-    if (!guidelineExists(canvas, 'horizontal-top')) {
-      const line = createHorizontalGuideline(canvas, 0, 'horizontal-top');
-      newGuidelines.push(line);
-      canvas.add(line);
-    }
-    snapped = true;
-  }
+  // 👉 Center snapping
+  snapped =
+    snapToCenter(
+      canvas,
+      obj,
+      newGuidelines,
+      centerX,
+      centerY,
+      centerCanvasX,
+      centerCanvasY
+    ) || snapped;
 
-  if (Math.abs(right - canvasWidth) < snappingDistance) {
-    obj.set({ left: canvasWidth - obj.width * obj.scaleX });
-    if (!guidelineExists(canvas, 'vertical-right')) {
-      const line = createVerticalGuideline(
-        canvas,
-        canvasWidth,
-        'vertical-right'
-      );
-      newGuidelines.push(line);
-      canvas.add(line);
-    }
-    snapped = true;
-  }
-
-  if (Math.abs(bottom - canvasHeight) < snappingDistance) {
-    obj.set({ top: canvasHeight - obj.height * obj.scaleY });
-    if (!guidelineExists(canvas, 'horizontal-bottom')) {
-      const line = createHorizontalGuideline(
-        canvas,
-        canvasHeight,
-        'horizontal-bottom'
-      );
-      newGuidelines.push(line);
-      canvas.add(line);
-    }
-    snapped = true;
-  }
-
-  // —— Center snapping —— //
-
-  // Snap object’s center to canvas vertical mid‐line
-  if (Math.abs(centerX - centerCanvasX) < snappingDistance) {
-    // position so object is exactly centered
-    obj.set({ left: centerCanvasX - (obj.width * obj.scaleX) / 2 });
-    if (!guidelineExists(canvas, 'vertical-center')) {
-      const line = createVerticalGuideline(
-        canvas,
-        centerCanvasX,
-        'vertical-center'
-      );
-      newGuidelines.push(line);
-      canvas.add(line);
-    }
-    snapped = true;
-  }
-
-  // Snap object’s center to canvas horizontal mid‐line
-  if (Math.abs(centerY - centerCanvasY) < snappingDistance) {
-    obj.set({ top: centerCanvasY - (obj.height * obj.scaleY) / 2 });
-    if (!guidelineExists(canvas, 'horizontal-center')) {
-      const line = createHorizontalGuideline(
-        canvas,
-        centerCanvasY,
-        'horizontal-center'
-      );
-      newGuidelines.push(line);
-      canvas.add(line);
-    }
-    snapped = true;
-  }
-
-  // If nothing snapped, clear any leftover guides
   if (!snapped) {
     clearGuidelines(canvas);
   } else {
@@ -119,6 +69,162 @@ export const handleObjectMoving = (canvas, obj, guidelines, setGuidelines) => {
   }
 
   canvas.renderAll();
+};
+
+// 🔧 HELPER FUNCTIONS
+
+const snapToEdge = (
+  canvas,
+  obj,
+  guidelines,
+  left,
+  top,
+  right,
+  bottom,
+  canvasWidth,
+  canvasHeight
+) => {
+  let snapped = false;
+
+  if (Math.abs(left) < snappingDistance) {
+    obj.set({ left: 0 });
+    addGuideline(
+      canvas,
+      guidelines,
+      createVerticalGuideline(canvas, 0, 'vertical-left')
+    );
+    snapped = true;
+  }
+
+  if (Math.abs(top) < snappingDistance) {
+    obj.set({ top: 0 });
+    addGuideline(
+      canvas,
+      guidelines,
+      createHorizontalGuideline(canvas, 0, 'horizontal-top')
+    );
+    snapped = true;
+  }
+
+  if (Math.abs(right - canvasWidth) < snappingDistance) {
+    obj.set({ left: canvasWidth - obj.width * obj.scaleX });
+    addGuideline(
+      canvas,
+      guidelines,
+      createVerticalGuideline(canvas, canvasWidth, 'vertical-right')
+    );
+    snapped = true;
+  }
+
+  if (Math.abs(bottom - canvasHeight) < snappingDistance) {
+    obj.set({ top: canvasHeight - obj.height * obj.scaleY });
+    addGuideline(
+      canvas,
+      guidelines,
+      createHorizontalGuideline(canvas, canvasHeight, 'horizontal-bottom')
+    );
+    snapped = true;
+  }
+
+  return snapped;
+};
+
+const snapToMargins = (
+  canvas,
+  obj,
+  guidelines,
+  left,
+  top,
+  right,
+  bottom,
+  canvasWidth,
+  canvasHeight,
+  margin
+) => {
+  let snapped = false;
+
+  if (Math.abs(left - margin) < snappingDistance) {
+    obj.set({ left: margin });
+    addGuideline(
+      canvas,
+      guidelines,
+      createVerticalGuideline(canvas, margin, 'margin-left')
+    );
+    snapped = true;
+  }
+
+  if (Math.abs(right - (canvasWidth - margin)) < snappingDistance) {
+    obj.set({ left: canvasWidth - margin - obj.width * obj.scaleX });
+    addGuideline(
+      canvas,
+      guidelines,
+      createVerticalGuideline(canvas, canvasWidth - margin, 'margin-right')
+    );
+    snapped = true;
+  }
+
+  if (Math.abs(top - margin) < snappingDistance) {
+    obj.set({ top: margin });
+    addGuideline(
+      canvas,
+      guidelines,
+      createHorizontalGuideline(canvas, margin, 'margin-top')
+    );
+    snapped = true;
+  }
+
+  if (Math.abs(bottom - (canvasHeight - margin)) < snappingDistance) {
+    obj.set({ top: canvasHeight - margin - obj.height * obj.scaleY });
+    addGuideline(
+      canvas,
+      guidelines,
+      createHorizontalGuideline(canvas, canvasHeight - margin, 'margin-bottom')
+    );
+    snapped = true;
+  }
+
+  return snapped;
+};
+
+const snapToCenter = (
+  canvas,
+  obj,
+  guidelines,
+  centerX,
+  centerY,
+  centerCanvasX,
+  centerCanvasY
+) => {
+  let snapped = false;
+
+  if (Math.abs(centerX - centerCanvasX) < snappingDistance) {
+    obj.set({ left: centerCanvasX - (obj.width * obj.scaleX) / 2 });
+    addGuideline(
+      canvas,
+      guidelines,
+      createVerticalGuideline(canvas, centerCanvasX, 'vertical-center')
+    );
+    snapped = true;
+  }
+
+  if (Math.abs(centerY - centerCanvasY) < snappingDistance) {
+    obj.set({ top: centerCanvasY - (obj.height * obj.scaleY) / 2 });
+    addGuideline(
+      canvas,
+      guidelines,
+      createHorizontalGuideline(canvas, centerCanvasY, 'horizontal-center')
+    );
+    snapped = true;
+  }
+
+  return snapped;
+};
+
+const addGuideline = (canvas, guidelines, line) => {
+  if (!guidelineExists(canvas, line.id)) {
+    guidelines.push(line);
+    canvas.add(line);
+  }
 };
 
 export const createVerticalGuideline = (canvas, x, id) => {
@@ -145,23 +251,14 @@ export const createHorizontalGuideline = (canvas, y, id) => {
   });
 };
 
-// export const clearGuidelines = (canvas) => {
-// 	const objects = canvas.getObjects('line');
-// 	objects.forEach((obj) => {
-// 		if (
-// 			(obj.id && obj.id.startsWith('vertical-')) ||
-// 			obj.id.startsWith('horizontal-')
-// 		) {
-// 			canvas.remove(obj);
-// 		}
-// 	});
-// 	canvas.renderAll();
-// };
-
 export const clearGuidelines = (canvas) => {
   const lines = canvas.getObjects('line');
   lines.forEach((line) => {
-    if (line.id?.startsWith('vertical-') || line.id.startsWith('horizontal-')) {
+    if (
+      line.id?.startsWith('vertical-') ||
+      line.id?.startsWith('horizontal-') ||
+      line.id?.startsWith('margin-')
+    ) {
       canvas.remove(line);
     }
   });

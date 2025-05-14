@@ -10,6 +10,8 @@ export interface YourSpecificTemplateType {
   fabricJSON: string; // Contains stringified Fabric.js canvas state
 }
 
+const centerMiddlePanelTrifold = 462.5; // Center of the middle panel for trifolds
+
 const VERSION = '6.6.4'; // Using a consistent version for Fabric objects
 
 export const sampleProgramTemplates: YourSpecificTemplateType[] = [
@@ -505,64 +507,49 @@ export const sampleProgramTemplates: YourSpecificTemplateType[] = [
         // --- Panel 2: Middle Panel (X from 425 to 850) ---
         {
           type: 'textbox',
-          version: VERSION,
-          originX: 'center',
-          originY: 'top',
-          left: 637.5,
+          left: centerMiddlePanelTrifold,
           top: 62.5,
-          width: 375, // Scaled: (1700 + 1700 / 2)*0.25, 250*0.25, 1500*0.25
+          width: 350,
           fill: '#FFFFFF',
           shadow: 'rgba(0,0,0,0.8) 1.5px 1.5px 4px',
           text: 'Pallbearers',
-          fontSize: 32.5, // Scaled: 130*0.25
-          fontFamily: 'Brush Script MT',
-          textAlign: 'center',
-          name: 'mid_pallbearers_title'
+          fontSize: 34,
+          fontFamily: 'Pinyon Script',
+          textAlign: 'center'
         },
         {
           type: 'textbox',
-          version: VERSION,
-          originX: 'center',
-          originY: 'top',
-          left: 637.5,
+          left: centerMiddlePanelTrifold,
           top: 110,
-          width: 375, // Scaled approx
+          width: 350,
           fill: '#FFFFFF',
           shadow: 'rgba(0,0,0,0.8) 1.5px 1.5px 4px',
           text: 'Friends of the Family',
-          fontSize: 22.5, // Scaled: 90*0.25
+          fontSize: 18,
           fontFamily: 'Georgia',
-          textAlign: 'center',
-          name: 'mid_pallbearers_names'
+          textAlign: 'center'
         },
         {
           type: 'textbox',
-          version: VERSION,
-          originX: 'center',
-          originY: 'top',
-          left: 637.5,
+          left: centerMiddlePanelTrifold,
           top: 182.5,
-          width: 375, // Scaled approx
+          width: 350,
           fill: '#FFFFFF',
           shadow: 'rgba(0,0,0,0.8) 1.5px 1.5px 4px',
           text: 'Flower Bearers',
-          fontSize: 32.5, // Scaled: 130*0.25
-          fontFamily: 'Brush Script MT',
-          textAlign: 'center',
-          name: 'mid_flowerbearers_title'
+          fontSize: 34,
+          fontFamily: 'Aston Script Pro Bold',
+          textAlign: 'center'
         },
         {
           type: 'textbox',
-          version: VERSION,
-          originX: 'center',
-          originY: 'top',
-          left: 637.5,
+          left: centerMiddlePanelTrifold,
           top: 230,
-          width: 375, // Scaled approx
+          width: 350,
           fill: '#FFFFFF',
           shadow: 'rgba(0,0,0,0.8) 1.5px 1.5px 4px',
           text: 'Friends of the Family',
-          fontSize: 22.5, // Scaled: 90*0.25
+          fontSize: 18,
           fontFamily: 'Georgia',
           textAlign: 'center',
           name: 'mid_flowerbearers_names_2'
@@ -570,31 +557,26 @@ export const sampleProgramTemplates: YourSpecificTemplateType[] = [
         {
           type: 'textbox',
           version: VERSION,
-          originX: 'center',
-          originY: 'top',
-          left: 637.5,
+          left: centerMiddlePanelTrifold,
           top: 302.5,
-          width: 375, // Scaled approx
+          width: 350,
           fill: '#FFFFFF',
           shadow: 'rgba(0,0,0,0.8) 1.5px 1.5px 4px',
           text: 'Burial',
-          fontSize: 32.5, // Scaled: 130*0.25
-          fontFamily: 'Brush Script MT',
+          fontSize: 34,
+          fontFamily: 'Aston Script Pro Bold',
           textAlign: 'center',
           name: 'mid_burial_title'
         },
         {
           type: 'textbox',
-          version: VERSION,
-          originX: 'center',
-          originY: 'top',
-          left: 637.5,
+          left: centerMiddlePanelTrifold,
           top: 350,
-          width: 375, // Scaled approx
+          width: 350, // Scaled approx
           fill: '#FFFFFF',
           shadow: 'rgba(0,0,0,0.8) 1.5px 1.5px 4px',
           text: 'Rocky Heights Memorial Garden',
-          fontSize: 22.5, // Scaled: 90*0.25
+          fontSize: 18, // Scaled: 90*0.25
           fontFamily: 'Georgia',
           textAlign: 'center',
           name: 'mid_burial_location'
@@ -639,22 +621,21 @@ export const sampleProgramTemplates: YourSpecificTemplateType[] = [
         {
           type: 'rect',
           version: VERSION,
-          left: 55,
-          top: 0,
+          left: 48,
+          bottom: 10,
           width: 325,
           height: 1275,
           fill: '#04291d',
           opacity: '.5',
-          name: 'green_bar'
+          name: 'green_bar',
+          cornerColor: 'rgb(178,204,0)'
         },
         {
           type: 'textbox',
           version: VERSION,
-          originX: 'center',
-          originY: 'top',
-          left: 212.5,
+          left: 48,
           top: 62.5,
-          width: 375, // Scaled: (1700 / 2)*0.25, 250*0.25, 1500*0.25
+          width: 325, // Scaled: (1700 / 2)*0.25, 250*0.25, 1500*0.25
           fill: '#FFFFFF',
           shadow: 'rgba(0,0,0,0.8) 1.5px 1.5px 4px',
           text: "God's Garden",
@@ -662,16 +643,15 @@ export const sampleProgramTemplates: YourSpecificTemplateType[] = [
           fontFamily: 'Georgia',
           fontWeight: 'bold',
           textAlign: 'center',
-          name: 'left_poem_title'
+          name: 'left_poem_title',
+          lockMovementX: true
         },
         {
           type: 'textbox',
           version: VERSION,
-          originX: 'center',
-          originY: 'top',
-          left: 212.5,
+          left: 48,
           top: 137.5,
-          width: 350,
+          width: 325,
           height: 500, // Scaled approx
           fill: '#FFFFFF',
           shadow: 'rgba(0,0,0,0.8) 1.5px 1.5px 4px',
@@ -681,7 +661,8 @@ export const sampleProgramTemplates: YourSpecificTemplateType[] = [
           textAlign: 'center',
           fontStyle: 'italic',
           lineHeight: 1.2,
-          name: 'left_poem_text'
+          name: 'left_poem_text',
+          lockMovementX: true
         }
       ]
     })
@@ -995,7 +976,7 @@ export const sampleProgramTemplates: YourSpecificTemplateType[] = [
         {
           type: 'rect',
           version: VERSION,
-          left: 55,
+          left: 48,
           top: 0,
           width: 325,
           height: 1275,
@@ -1006,11 +987,9 @@ export const sampleProgramTemplates: YourSpecificTemplateType[] = [
         {
           type: 'textbox',
           version: VERSION,
-          originX: 'center',
-          originY: 'top',
-          left: 212.5,
+          left: 50,
           top: 62.5,
-          width: 375, // Scaled: (1700 / 2)*0.25, 250*0.25, 1500*0.25
+          width: 328,
           fill: '#FFFFFF',
           shadow: 'rgba(0,0,0,0.8) 1.5px 1.5px 4px',
           text: "God's Garden",
@@ -1023,11 +1002,9 @@ export const sampleProgramTemplates: YourSpecificTemplateType[] = [
         {
           type: 'textbox',
           version: VERSION,
-          originX: 'center',
-          originY: 'top',
-          left: 212.5,
+          left: 50,
           top: 137.5,
-          width: 350,
+          width: 328,
           height: 500, // Scaled approx
           fill: '#FFFFFF',
           shadow: 'rgba(0,0,0,0.8) 1.5px 1.5px 4px',

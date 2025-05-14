@@ -116,7 +116,7 @@ const Settings: React.FC<SettingsProps> = ({ canvas }) => {
   };
 
   return (
-    <div className="Settings dark">
+    <div className="Settings dark w-[225px]">
       {selectedObject?.type === 'rect' && (
         <>
           <Input

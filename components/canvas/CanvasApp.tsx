@@ -6,9 +6,7 @@ import {
   Textbox,
   Rect,
   Circle,
-  Image as FabricImage,
-  TEvent as TTargetEvent,
-  TPointerEvent
+  Image as FabricImage
 } from 'fabric';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,6 +32,7 @@ import type {
   FabricCanvas
 } from '@/components/canvas/types/canvas';
 import type { ObjectMovingEvent } from '@/components/canvas/types/events';
+import { customFontMap } from './utils/fonts';
 
 export interface YourSpecificTemplateType {
   id?: string;
@@ -121,89 +120,147 @@ export default function CanvasApp({ templateData }: CanvasAppProps) {
   useEffect(() => {
     if (!canvas) return;
 
-    if (templateData) {
-      if (
-        typeof templateData.width === 'number' &&
-        typeof templateData.height === 'number'
-      ) {
-        canvas.setDimensions(
-          { width: templateData.width, height: templateData.height },
-          { cssOnly: true }
-        );
-        canvas.setDimensions(
-          { width: templateData.width, height: templateData.height },
-          { backstoreOnly: true }
-        );
-      }
-
-      const newBg = templateData.backgroundColor || '#ffffff';
-      canvas.backgroundColor = newBg;
-      canvas.renderAll();
-
-      if (templateData.fabricJSON) {
-        try {
-          canvas.clear();
-          canvas.backgroundColor = newBg;
-
-          const cleanedJSON = templateData.fabricJSON.replaceAll(
-            'http://localhost:3000',
-            ''
+    const loadTemplate = async () => {
+      if (templateData) {
+        if (
+          typeof templateData.width === 'number' &&
+          typeof templateData.height === 'number'
+        ) {
+          canvas.setDimensions(
+            { width: templateData.width, height: templateData.height },
+            { cssOnly: true }
           );
-          canvas.loadFromJSON(cleanedJSON, () => {
-            const bgImg = canvas.backgroundImage;
-            if (bgImg instanceof FabricImage) {
-              const imgElement = bgImg.getElement();
-              if (imgElement instanceof HTMLImageElement) {
-                const naturalWidth = imgElement.naturalWidth;
-                const naturalHeight = imgElement.naturalHeight;
+          canvas.setDimensions(
+            { width: templateData.width, height: templateData.height },
+            { backstoreOnly: true }
+          );
+        }
 
-                if (
-                  naturalWidth > 0 &&
-                  naturalHeight > 0 &&
-                  (canvas.width ?? 0) > 0 &&
-                  (canvas.height ?? 0) > 0
-                ) {
-                  const scaleX = (canvas.width ?? 0) / naturalWidth;
-                  const scaleY = (canvas.height ?? 0) / naturalHeight;
+        const newBg = templateData.backgroundColor || '#ffffff';
+        canvas.backgroundColor = newBg;
+        canvas.renderAll();
 
-                  bgImg.set({
-                    width: naturalWidth,
-                    height: naturalHeight,
-                    scaleX,
-                    scaleY,
-                    originX: 'left',
-                    originY: 'top',
-                    left: 0,
-                    top: 0
-                  });
+        if (templateData.fabricJSON) {
+          try {
+            canvas.clear();
+            canvas.backgroundColor = newBg;
+
+            const cleanedJSON = templateData.fabricJSON.replaceAll(
+              'http://localhost:3000',
+              ''
+            );
+
+            // ✅ FontFace preload before loadFromJSON
+            const fonts = new Set<string>();
+            JSON.parse(cleanedJSON).objects?.forEach((obj: any) => {
+              if (obj.fontFamily && customFontMap[obj.fontFamily]) {
+                fonts.add(obj.fontFamily);
+              }
+            });
+
+            await Promise.all(
+              Array.from(fonts).map(async (fontName) => {
+                const fontFace = new FontFace(
+                  fontName,
+                  `url(${customFontMap[fontName]})`
+                );
+                await fontFace.load();
+                document.fonts.add(fontFace);
+              })
+            );
+
+            canvas.loadFromJSON(cleanedJSON, () => {
+              const bgImg = canvas.backgroundImage;
+              if (bgImg instanceof FabricImage) {
+                const imgElement = bgImg.getElement();
+                if (imgElement instanceof HTMLImageElement) {
+                  const canvasWidth = canvas.width ?? 0;
+                  const canvasHeight = canvas.height ?? 0;
+                  const naturalWidth = imgElement.naturalWidth;
+                  const naturalHeight = imgElement.naturalHeight;
+
+                  if (
+                    naturalWidth > 0 &&
+                    naturalHeight > 0 &&
+                    canvasWidth > 0 &&
+                    canvasHeight > 0
+                  ) {
+                    const scaleX = canvasWidth / naturalWidth;
+                    const scaleY = canvasHeight / naturalHeight;
+
+                    bgImg.set({
+                      width: naturalWidth,
+                      height: naturalHeight,
+                      scaleX,
+                      scaleY,
+                      originX: 'left',
+                      originY: 'top',
+                      left: 0,
+                      top: 0
+                    });
+                  }
                 }
               }
-            }
+
+              // ✅ First pass fix
+              canvas.getObjects().forEach((obj) => {
+                if (obj.type === 'textbox') {
+                  // const textbox = obj as fabric.Textbox;
+                  // const minWidth = 50;
+                  // const textWidth = textbox.calcTextWidth();
+                  // const newWidth = Math.max(minWidth, textWidth + 10);
+                  // textbox.set({ width: newWidth });
+                  // textbox.setCoords();
+                }
+              });
+
+              canvas.renderAll();
+
+              // ✅ Double pass after fonts applied
+              requestAnimationFrame(() => {
+                canvas.getObjects().forEach((obj) => {
+                  if (obj.type === 'textbox') {
+                    // const textbox = obj as fabric.Textbox;
+                    // const minWidth = 50;
+                    // const textWidth = textbox.calcTextWidth();
+                    // const newWidth = Math.max(minWidth, textWidth + 10);
+                    // textbox.set({ width: newWidth });
+                    // textbox.setCoords();
+                  }
+                });
+
+                canvas.requestRenderAll();
+                requestAnimationFrame(() => {
+                  resizeCanvasAction();
+                  canvas.requestRenderAll();
+                });
+              });
+            });
+          } catch (err) {
+            console.error('Error loading template JSON:', err);
+            toast.error('Failed to load template.');
+            canvas.clear();
+            canvas.backgroundColor = '#ffffff';
+            canvas.setDimensions({ width: 500, height: 500 });
             canvas.renderAll();
             resizeCanvasAction();
-          });
-        } catch (err) {
-          console.error('Error loading template JSON:', err);
-          toast.error('Failed to load template.');
-          canvas.clear();
-          canvas.backgroundColor = '#ffffff';
-          canvas.setDimensions({ width: 500, height: 500 });
+          }
+        } else {
+          canvas.getObjects().forEach((o) => canvas.remove(o));
+          canvas.backgroundImage = undefined;
           canvas.renderAll();
           resizeCanvasAction();
         }
       } else {
-        canvas.getObjects().forEach((o) => canvas.remove(o));
-        canvas.backgroundImage = undefined;
+        canvas.clear();
+        canvas.setDimensions({ width: 500, height: 500 });
+        canvas.backgroundColor = '#ffffff';
         canvas.renderAll();
         resizeCanvasAction();
       }
-    } else {
-      canvas.clear();
-      canvas.setDimensions({ width: 500, height: 500 });
-      canvas.backgroundColor = '#ffffff';
-      canvas.renderAll();
-      resizeCanvasAction();
-    }
+    };
+
+    loadTemplate();
   }, [canvas, templateData]);
 
   const addRectangle = () => {
