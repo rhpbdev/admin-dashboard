@@ -5,6 +5,7 @@ import './globals.css';
 import { Montserrat } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/react';
 import { GlobalProviders } from './global-providers'; // Import the new global providers
+import { EditorFlowProvider } from 'context/EditorFlowContext';
 
 const montserrat = Montserrat({
   subsets: ['latin'],
@@ -29,10 +30,12 @@ export default function RootLayout({
           {' '}
           {/* Wrap the content that needs providers */}
           <Navbar />
-          <main className="flex-grow w-full">{children}</main>
+          <main className="flex-grow w-full">
+            <EditorFlowProvider>{children}</EditorFlowProvider>
+          </main>
           <Footer />
         </GlobalProviders>
-        <Analytics />{' '}
+        <Analytics />
         {/* Vercel Analytics is correctly placed here at the end of the html, or just before </body> */}
       </body>
     </html>

@@ -11,6 +11,9 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+// Lookup program style from sampleProgramTemplates
+import { sampleProgramTemplates } from '@/components/lib/sampleTemplateData';
 
 export default function ProductDetailPage() {
   const router = useRouter();
@@ -19,16 +22,19 @@ export default function ProductDetailPage() {
 
   const [programSize, setProgramSize] = useState<string>('');
   const [accessory, setAccessory] = useState<string>('');
+  const [deceasedName, setDeceasedName] = useState<string>('');
 
   const handleCustomize = () => {
     if (!programSize || !accessory) {
-      alert('Please select both size and accessory');
+      alert('Please make a selection');
       return;
     }
 
-    // 🚀 Navigate to editor with product + options
+    const programTemplate = sampleProgramTemplates.find((t) => t.id === slug);
+    const style = programTemplate?.style || '';
+
     router.push(
-      `/editorProducts/${slug}?size=${programSize}&accessory=${accessory}`
+      `/editorFlow/program/${slug}?size=${programSize}&accessory=${accessory}&style=${style}`
     );
   };
 
@@ -65,6 +71,15 @@ export default function ProductDetailPage() {
             </SelectContent>
           </Select>
         </div>
+        {/* <div>
+          <label className="font-semibold">Name of Deceased</label>
+          <Input
+            type="text"
+            placeholder="Name"
+            value={deceasedName}
+            onChange={(e) => setDeceasedName(e.target.value)}
+          />
+        </div> */}
 
         <Button
           className="w-full mt-8"

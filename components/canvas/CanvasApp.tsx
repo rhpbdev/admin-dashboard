@@ -1,13 +1,8 @@
 'use client';
 
 import React, { useRef, useEffect, useState } from 'react';
-import {
-  Canvas as FabricCanvasClass,
-  Textbox,
-  Rect,
-  Circle,
-  Image as FabricImage
-} from 'fabric';
+import { Canvas, Textbox, Rect, Circle, Image as FabricImage } from 'fabric';
+
 import { Button } from '@/components/ui/button';
 import {
   Circle as CircleIcon,
@@ -26,13 +21,11 @@ import StyleEditor from './StyleEditor';
 import Templates from './Templates';
 import * as snappingHelpers from '@/components/lib/snappingHelpers';
 import SaveLoad from '@/components/canvas/SaveLoad';
-import type {
-  FabricObject,
-  Guideline,
-  FabricCanvas
-} from '@/components/canvas/types/canvas';
+import type { FabricObject, Guideline } from '@/components/canvas/types/canvas';
 import type { ObjectMovingEvent } from '@/components/canvas/types/events';
 import { customFontMap } from './utils/fonts';
+import Inputs from './Inputs';
+import { applyTextValuesToCanvas } from './utils/applyTextValuesToCanvas';
 
 export interface YourSpecificTemplateType {
   id?: string;
@@ -41,15 +34,32 @@ export interface YourSpecificTemplateType {
   height?: number;
   backgroundColor?: string;
   fabricJSON?: string;
+  outsideJSON?: string;
+  insideJSON?: string;
+  style?: string;
 }
+
+type ViewSide = 'outside' | 'inside';
 
 interface CanvasAppProps {
   templateData?: YourSpecificTemplateType | null;
+  initialTextValues?: {
+    name_of_deceased?: string;
+    sunrise_date?: string;
+    sunset_date?: string;
+    service_date?: string;
+    deceased_cover_photo?: string;
+  };
+  viewSide?: ViewSide;
 }
 
-export default function CanvasApp({ templateData }: CanvasAppProps) {
+export default function CanvasApp({
+  templateData,
+  initialTextValues,
+  viewSide
+}: CanvasAppProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
+  const [canvas, setCanvas] = useState<Canvas | null>(null);
   const guidelinesRef = useRef<Guideline[]>([]);
   const [guidelines, setGuidelines] = useState<Guideline[]>([]);
   const [showTemplates, setShowTemplates] = useState(false);
@@ -75,7 +85,7 @@ export default function CanvasApp({ templateData }: CanvasAppProps) {
 
   useEffect(() => {
     if (!canvasRef.current) return;
-    const initCanvas = new FabricCanvasClass(canvasRef.current, {
+    const initCanvas = new Canvas(canvasRef.current, {
       width: 500,
       height: 500,
       backgroundColor: '#ffffff'
@@ -118,150 +128,140 @@ export default function CanvasApp({ templateData }: CanvasAppProps) {
   }, []);
 
   useEffect(() => {
+    if (!canvas || !initialTextValues) return;
+    applyTextValuesToCanvas(canvas, initialTextValues);
+  }, [canvas, initialTextValues]);
+
+  useEffect(() => {
     if (!canvas) return;
 
     const loadTemplate = async () => {
-      if (templateData) {
-        if (
-          typeof templateData.width === 'number' &&
-          typeof templateData.height === 'number'
-        ) {
-          canvas.setDimensions(
-            { width: templateData.width, height: templateData.height },
-            { cssOnly: true }
-          );
-          canvas.setDimensions(
-            { width: templateData.width, height: templateData.height },
-            { backstoreOnly: true }
-          );
-        }
+      if (!templateData) return;
 
-        const newBg = templateData.backgroundColor || '#ffffff';
-        canvas.backgroundColor = newBg;
+      const { width, height } = templateData;
+      if (typeof width === 'number' && typeof height === 'number') {
+        canvas.setDimensions({ width, height }, { cssOnly: true });
+        canvas.setDimensions({ width, height }, { backstoreOnly: true });
+      }
+
+      const newBg = templateData.backgroundColor || '#ffffff';
+      canvas.backgroundColor = newBg;
+      canvas.renderAll();
+
+      const sideJSON =
+        viewSide === 'inside'
+          ? templateData?.insideJSON
+          : templateData?.outsideJSON || templateData?.fabricJSON;
+
+      if (!sideJSON) {
+        canvas.clear();
+        canvas.backgroundImage = undefined;
         canvas.renderAll();
+        resizeCanvasAction();
+        return;
+      }
 
-        if (templateData.fabricJSON) {
-          try {
-            canvas.clear();
-            canvas.backgroundColor = newBg;
+      try {
+        canvas.clear();
+        canvas.backgroundColor = newBg;
 
-            const cleanedJSON = templateData.fabricJSON.replaceAll(
-              'http://localhost:3000',
-              ''
+        const cleanedJSON = sideJSON.replaceAll('http://localhost:3000', '');
+        const parsed = JSON.parse(cleanedJSON);
+        const bgImageInfo = parsed.backgroundImage;
+        delete parsed.backgroundImage;
+
+        const fonts = new Set<string>();
+        parsed.objects?.forEach((obj: any) => {
+          if (obj.fontFamily && customFontMap[obj.fontFamily]) {
+            fonts.add(obj.fontFamily);
+          }
+        });
+
+        await Promise.all(
+          Array.from(fonts).map(async (fontName) => {
+            const fontFace = new FontFace(
+              fontName,
+              `url(${customFontMap[fontName]})`
             );
+            await fontFace.load();
+            document.fonts.add(fontFace);
+          })
+        );
 
-            // ✅ FontFace preload before loadFromJSON
-            const fonts = new Set<string>();
-            JSON.parse(cleanedJSON).objects?.forEach((obj: any) => {
-              if (obj.fontFamily && customFontMap[obj.fontFamily]) {
-                fonts.add(obj.fontFamily);
-              }
-            });
-
-            await Promise.all(
-              Array.from(fonts).map(async (fontName) => {
-                const fontFace = new FontFace(
-                  fontName,
-                  `url(${customFontMap[fontName]})`
-                );
-                await fontFace.load();
-                document.fonts.add(fontFace);
-              })
-            );
-
-            canvas.loadFromJSON(cleanedJSON, () => {
-              const bgImg = canvas.backgroundImage;
-              if (bgImg instanceof FabricImage) {
-                const imgElement = bgImg.getElement();
-                if (imgElement instanceof HTMLImageElement) {
-                  const canvasWidth = canvas.width ?? 0;
-                  const canvasHeight = canvas.height ?? 0;
-                  const naturalWidth = imgElement.naturalWidth;
-                  const naturalHeight = imgElement.naturalHeight;
-
-                  if (
-                    naturalWidth > 0 &&
-                    naturalHeight > 0 &&
-                    canvasWidth > 0 &&
-                    canvasHeight > 0
-                  ) {
-                    const scaleX = canvasWidth / naturalWidth;
-                    const scaleY = canvasHeight / naturalHeight;
-
-                    bgImg.set({
-                      width: naturalWidth,
-                      height: naturalHeight,
-                      scaleX,
-                      scaleY,
-                      originX: 'left',
-                      originY: 'top',
-                      left: 0,
-                      top: 0
-                    });
-                  }
-                }
-              }
-
-              // ✅ First pass fix
-              canvas.getObjects().forEach((obj) => {
-                if (obj.type === 'textbox') {
-                  // const textbox = obj as fabric.Textbox;
-                  // const minWidth = 50;
-                  // const textWidth = textbox.calcTextWidth();
-                  // const newWidth = Math.max(minWidth, textWidth + 10);
-                  // textbox.set({ width: newWidth });
-                  // textbox.setCoords();
-                }
+        canvas.loadFromJSON(parsed, () => {
+          if (bgImageInfo?.src) {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.src = bgImageInfo.src;
+            img.onload = () => {
+              const fabricImg = new FabricImage(img, {
+                originX: 'left',
+                originY: 'top',
+                left: 0,
+                top: 0
               });
 
+              const scale = Math.max(
+                canvas.width! / img.naturalWidth,
+                canvas.height! / img.naturalHeight
+              );
+
+              fabricImg.set({
+                scaleX: scale,
+                scaleY: scale
+              });
+
+              canvas.set('backgroundImage', fabricImg);
               canvas.renderAll();
 
-              // ✅ Double pass after fonts applied
               requestAnimationFrame(() => {
-                canvas.getObjects().forEach((obj) => {
-                  if (obj.type === 'textbox') {
-                    // const textbox = obj as fabric.Textbox;
-                    // const minWidth = 50;
-                    // const textWidth = textbox.calcTextWidth();
-                    // const newWidth = Math.max(minWidth, textWidth + 10);
-                    // textbox.set({ width: newWidth });
-                    // textbox.setCoords();
-                  }
-                });
+                resizeCanvasAction();
+                if (initialTextValues) {
+                  applyTextValuesToCanvas(canvas, initialTextValues);
+                }
+                if (initialTextValues?.deceased_cover_photo) {
+                  const imgObj = canvas
+                    .getObjects()
+                    .find(
+                      (obj) =>
+                        obj.type === 'image' &&
+                        (obj as any).name === 'deceased_cover_photo'
+                    ) as any;
 
+                  if (imgObj) {
+                    const imgElement = new Image();
+                    imgElement.crossOrigin = 'anonymous';
+                    imgElement.onload = () => {
+                      imgObj.setElement(imgElement);
+                      canvas.requestRenderAll();
+                    };
+                    imgElement.src = initialTextValues.deceased_cover_photo;
+                  }
+                }
                 canvas.requestRenderAll();
-                requestAnimationFrame(() => {
-                  resizeCanvasAction();
-                  canvas.requestRenderAll();
-                });
               });
-            });
-          } catch (err) {
-            console.error('Error loading template JSON:', err);
-            toast.error('Failed to load template.');
-            canvas.clear();
-            canvas.backgroundColor = '#ffffff';
-            canvas.setDimensions({ width: 500, height: 500 });
+            };
+            img.onerror = () => {
+              console.warn('Background image failed to load:', bgImageInfo.src);
+              canvas.renderAll();
+            };
+          } else {
             canvas.renderAll();
-            resizeCanvasAction();
           }
-        } else {
-          canvas.getObjects().forEach((o) => canvas.remove(o));
-          canvas.backgroundImage = undefined;
-          canvas.renderAll();
-          resizeCanvasAction();
-        }
-      } else {
+        });
+      } catch (err) {
+        console.error('Error loading template JSON:', err);
+        toast.error('Failed to load template.');
         canvas.clear();
-        canvas.setDimensions({ width: 500, height: 500 });
         canvas.backgroundColor = '#ffffff';
+        canvas.setDimensions({ width: 500, height: 500 });
         canvas.renderAll();
         resizeCanvasAction();
       }
     };
 
     loadTemplate();
-  }, [canvas, templateData]);
+  }, [canvas, templateData, initialTextValues]);
 
   const addRectangle = () => {
     if (!canvas) return;
@@ -325,41 +325,44 @@ export default function CanvasApp({ templateData }: CanvasAppProps) {
 
   return (
     <div className="App">
-      <div className="toolbar">
-        <Button
-          onClick={addRectangle}
-          variant="ghost"
-          className="text-amber-50"
-        >
-          <Square />
-        </Button>
-        <Button onClick={addCircle} variant="ghost" className="text-amber-50">
-          <CircleIcon />
-        </Button>
-        <Button onClick={addText} variant="ghost" className="text-amber-50">
-          <Type />
-        </Button>
-        <Images canvas={canvas} canvasRef={canvasRef} />
-        <Button
-          onClick={() => setShowTemplates(!showTemplates)}
-          variant="ghost"
-          className="text-amber-50"
-        >
-          <LayoutGrid />
-        </Button>
-        <Button
-          onClick={deleteSelectedObject}
-          variant="ghost"
-          className="text-amber-50"
-        >
-          <Trash />
-        </Button>
+      <div className="flex flex-col gap-2 bg-[#333] p-2 rounded fixed top-1/2 -translate-y-1/2 left-4 empty:hidden z-50">
+        <div className="grid grid-cols-3">
+          <Button
+            onClick={addRectangle}
+            variant="ghost"
+            className="text-amber-50"
+          >
+            <Square />
+          </Button>
+          <Button onClick={addCircle} variant="ghost" className="text-amber-50">
+            <CircleIcon />
+          </Button>
+          <Button onClick={addText} variant="ghost" className="text-amber-50">
+            <Type />
+          </Button>
+          <Images canvas={canvas} canvasRef={canvasRef} />
+          <Button
+            onClick={() => setShowTemplates(!showTemplates)}
+            variant="ghost"
+            className="text-amber-50"
+          >
+            <LayoutGrid />
+          </Button>
+          <Button
+            onClick={deleteSelectedObject}
+            variant="ghost"
+            className="text-amber-50"
+          >
+            <Trash />
+          </Button>
+        </div>
         <SaveLoad
           canvas={canvas}
           session={session}
           templateId={templateData?.id}
           resizeCanvasAction={resizeCanvasAction}
         />
+        <Inputs canvas={canvas} />
       </div>
 
       <div className="flex-grow flex justify-center items-center p-4">

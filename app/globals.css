@@ -267,3 +267,14 @@ input[type='search']::-ms-clear {
     height: auto !important; /* preserve aspect ratio */
   }
 }
+
+
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

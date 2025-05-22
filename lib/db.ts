@@ -9,12 +9,15 @@ import {
   integer,
   timestamp,
   pgEnum,
-  serial
+  serial,
+  boolean,
+  varchar
 } from 'drizzle-orm/pg-core';
 import { count, eq, ilike } from 'drizzle-orm';
 import { createInsertSchema } from 'drizzle-zod';
+import * as schema from './db/schema'; // <-- import all tables from here
 
-export const db = drizzle(neon(process.env.POSTGRES_URL!));
+export const db = drizzle(neon(process.env.DATABASE_URL!), { schema });
 
 export const statusEnum = pgEnum('status', ['active', 'inactive', 'archived']);
 
@@ -25,7 +28,9 @@ export const products = pgTable('products', {
   status: statusEnum('status').notNull(),
   price: numeric('price', { precision: 10, scale: 2 }).notNull(),
   stock: integer('stock').notNull(),
-  availableAt: timestamp('available_at').notNull()
+  availableAt: timestamp('available_at').notNull(),
+  isCustomizable: boolean('is_customizable').default(false).notNull(),
+  slug: varchar('slug', { length: 255 }).unique()
 });
 
 export type SelectProduct = typeof products.$inferSelect;
