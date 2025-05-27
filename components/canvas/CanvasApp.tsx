@@ -1,19 +1,12 @@
+// components/canvas/CanvasApp.tsx
 'use client';
 
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas, Textbox, Rect, Circle, Image as FabricImage } from 'fabric';
-
 import { Button } from '@/components/ui/button';
-import {
-  Circle as CircleIcon,
-  Square,
-  Type,
-  LayoutGrid,
-  Trash
-} from 'lucide-react';
+import { LayoutGrid } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 import { useSession } from 'next-auth/react';
-
 import Settings from '@/components/canvas/Settings';
 import Images from './Images';
 import CanvasSettings from './CanvasSettings';
@@ -21,37 +14,18 @@ import StyleEditor from './StyleEditor';
 import Templates from './Templates';
 import * as snappingHelpers from '@/components/lib/snappingHelpers';
 import SaveLoad from '@/components/canvas/SaveLoad';
-import type { FabricObject, Guideline } from '@/components/canvas/types/canvas';
 import type { ObjectMovingEvent } from '@/components/canvas/types/events';
 import { customFontMap } from './utils/fonts';
 import Inputs from './Inputs';
 import { applyTextValuesToCanvas } from './utils/applyTextValuesToCanvas';
+import { CanvasAppProps, Guideline } from '@/components/canvas/types/canvas';
+import DeleteObject from './DeleteObject';
+import AddText from './AddText';
+import AddCircle from './AddCircle';
+import AddRectangle from './AddRectangle';
 
-export interface YourSpecificTemplateType {
-  id?: string;
-  name?: string;
-  width?: number;
-  height?: number;
-  backgroundColor?: string;
-  fabricJSON?: string;
-  outsideJSON?: string;
-  insideJSON?: string;
-  style?: string;
-}
-
-type ViewSide = 'outside' | 'inside';
-
-interface CanvasAppProps {
-  templateData?: YourSpecificTemplateType | null;
-  initialTextValues?: {
-    name_of_deceased?: string;
-    sunrise_date?: string;
-    sunset_date?: string;
-    service_date?: string;
-    deceased_cover_photo?: string;
-  };
-  viewSide?: ViewSide;
-}
+// Debug flag - set to false in production
+const DEBUG = true;
 
 export default function CanvasApp({
   templateData,
@@ -64,6 +38,12 @@ export default function CanvasApp({
   const [guidelines, setGuidelines] = useState<Guideline[]>([]);
   const [showTemplates, setShowTemplates] = useState(false);
   const { data: session } = useSession();
+
+  const log = (message: string, data?: any) => {
+    if (DEBUG) {
+      console.log(`[CanvasApp] ${message}`, data || '');
+    }
+  };
 
   const resizeCanvasAction = () => {
     if (!canvasRef.current || !canvas) return;
@@ -83,8 +63,11 @@ export default function CanvasApp({
     canvas.requestRenderAll();
   };
 
+  // Initialize canvas
   useEffect(() => {
     if (!canvasRef.current) return;
+
+    log('Initializing canvas');
     const initCanvas = new Canvas(canvasRef.current, {
       width: 500,
       height: 500,
@@ -127,49 +110,89 @@ export default function CanvasApp({
     };
   }, []);
 
+  // Apply initial text values
   useEffect(() => {
     if (!canvas || !initialTextValues) return;
+    log('Applying initial text values', initialTextValues);
     applyTextValuesToCanvas(canvas, initialTextValues);
   }, [canvas, initialTextValues]);
 
+  // Load template
   useEffect(() => {
     if (!canvas) return;
 
     const loadTemplate = async () => {
-      if (!templateData) return;
+      if (!templateData) {
+        log('No template data provided');
+        return;
+      }
 
+      log('Loading template', {
+        templateId: templateData.id,
+        viewSide,
+        hasInsideJSON: !!templateData.insideJSON,
+        hasOutsideJSON: !!templateData.outsideJSON
+      });
+
+      // Set canvas dimensions
       const { width, height } = templateData;
       if (typeof width === 'number' && typeof height === 'number') {
         canvas.setDimensions({ width, height }, { cssOnly: true });
         canvas.setDimensions({ width, height }, { backstoreOnly: true });
+        log('Set canvas dimensions', { width, height });
       }
 
-      const newBg = templateData.backgroundColor || '#ffffff';
-      canvas.backgroundColor = newBg;
+      // Set initial background color from template
+      const templateBgColor = templateData.backgroundColor || '#ffffff';
+      canvas.backgroundColor = templateBgColor;
+      log('Set initial background color from template', templateBgColor);
       canvas.renderAll();
 
+      // Get the appropriate JSON for the current side
       const sideJSON =
         viewSide === 'inside'
           ? templateData?.insideJSON
           : templateData?.outsideJSON || templateData?.fabricJSON;
 
       if (!sideJSON) {
+        log('No JSON data for side', viewSide);
         canvas.clear();
         canvas.backgroundImage = undefined;
+        canvas.backgroundColor = templateBgColor;
         canvas.renderAll();
         resizeCanvasAction();
         return;
       }
 
       try {
+        // Clear canvas first - including any background image
         canvas.clear();
-        canvas.backgroundColor = newBg;
+        canvas.set('backgroundImage', null);
+        canvas.backgroundImage = undefined;
+        canvas.backgroundColor = templateBgColor;
+        log('Cleared canvas completely, set background to', templateBgColor);
 
+        // Parse JSON
         const cleanedJSON = sideJSON.replaceAll('http://localhost:3000', '');
         const parsed = JSON.parse(cleanedJSON);
-        const bgImageInfo = parsed.backgroundImage;
-        delete parsed.backgroundImage;
 
+        log('Parsed JSON', {
+          hasBackgroundImage: !!parsed.backgroundImage,
+          backgroundImageSrc: parsed.backgroundImage?.src,
+          backgroundColor: parsed.backgroundColor,
+          objectCount: parsed.objects?.length
+        });
+
+        // Store background info before deleting
+        const bgImageInfo = parsed.backgroundImage;
+        const parsedBgColor = parsed.backgroundColor;
+
+        // Remove backgroundImage from parsed data before loading
+        delete parsed.backgroundImage;
+        // Also remove backgroundColor to prevent it from overriding our set value
+        delete parsed.backgroundColor;
+
+        // Load custom fonts
         const fonts = new Set<string>();
         parsed.objects?.forEach((obj: any) => {
           if (obj.fontFamily && customFontMap[obj.fontFamily]) {
@@ -188,8 +211,23 @@ export default function CanvasApp({
           })
         );
 
+        // Load objects from JSON
         canvas.loadFromJSON(parsed, () => {
+          log('Canvas loadFromJSON complete');
+
+          // Set background color - prioritize parsed color, then template color
+          const finalBgColor = parsedBgColor || templateBgColor;
+          canvas.backgroundColor = finalBgColor;
+          log('Set final background color', {
+            parsedBgColor,
+            templateBgColor,
+            finalBgColor,
+            currentBgColor: canvas.backgroundColor
+          });
+
+          // Handle background image
           if (bgImageInfo?.src) {
+            log('Loading background image', bgImageInfo.src);
             const img = new Image();
             img.crossOrigin = 'anonymous';
             img.src = bgImageInfo.src;
@@ -198,7 +236,9 @@ export default function CanvasApp({
                 originX: 'left',
                 originY: 'top',
                 left: 0,
-                top: 0
+                top: 0,
+                flipX:
+                  templateData?.flipBackgroundOnInside && viewSide === 'inside'
               });
 
               const scale = Math.max(
@@ -211,42 +251,153 @@ export default function CanvasApp({
                 scaleY: scale
               });
 
-              canvas.set('backgroundImage', fabricImg);
+              (fabricImg as any).name = 'background';
+              canvas.backgroundImage = fabricImg;
+
+              // Preserve background color when setting background image
+              canvas.backgroundColor = finalBgColor;
+              log(
+                'Background image loaded and set, preserved background color',
+                finalBgColor
+              );
+
               canvas.renderAll();
 
+              // Apply text values after background image loads
               requestAnimationFrame(() => {
                 resizeCanvasAction();
-                if (initialTextValues) {
-                  applyTextValuesToCanvas(canvas, initialTextValues);
-                }
-                if (initialTextValues?.deceased_cover_photo) {
-                  const imgObj = canvas
-                    .getObjects()
-                    .find(
-                      (obj) =>
-                        obj.type === 'image' &&
-                        (obj as any).name === 'deceased_cover_photo'
-                    ) as any;
-
-                  if (imgObj) {
-                    const imgElement = new Image();
-                    imgElement.crossOrigin = 'anonymous';
-                    imgElement.onload = () => {
-                      imgObj.setElement(imgElement);
-                      canvas.requestRenderAll();
-                    };
-                    imgElement.src = initialTextValues.deceased_cover_photo;
-                  }
-                }
-                canvas.requestRenderAll();
+                applyTextValuesAndImages();
               });
             };
             img.onerror = () => {
               console.warn('Background image failed to load:', bgImageInfo.src);
               canvas.renderAll();
+              requestAnimationFrame(() => {
+                resizeCanvasAction();
+                applyTextValuesAndImages();
+              });
             };
-          } else {
+          } else if (bgImageInfo === null || !bgImageInfo) {
+            // Explicitly clear background image when it's null or undefined
+            log('Clearing background image (bgImageInfo is null/undefined)');
+            canvas.set('backgroundImage', null);
+            canvas.backgroundImage = undefined;
+
+            // Re-apply background color after clearing image
+            const finalBgColor = parsedBgColor || templateBgColor || '#FFFFFF';
+            canvas.set('backgroundColor', finalBgColor);
+            canvas.backgroundColor = finalBgColor;
+            log('Set background color after clearing image', {
+              finalBgColor,
+              canvasBackgroundColor: canvas.backgroundColor,
+              canvasGetBackgroundColor: canvas.get('backgroundColor')
+            });
+
+            // Force render with background color
             canvas.renderAll();
+
+            // Also set the background color on the canvas element itself
+            if (canvas.getElement()) {
+              canvas.getElement().style.backgroundColor = finalBgColor;
+            }
+
+            log(
+              'Canvas rendered with background color',
+              canvas.get('backgroundColor')
+            );
+
+            requestAnimationFrame(() => {
+              resizeCanvasAction();
+              applyTextValuesAndImages();
+              // Double-check background color after render
+              log(
+                'Background color after render',
+                canvas.get('backgroundColor')
+              );
+            });
+          } else {
+            // No background image
+            log('No background image, clearing any existing');
+            canvas.backgroundImage = undefined;
+
+            // Force render with background color
+            canvas.renderAll();
+            log(
+              'Canvas rendered with background color',
+              canvas.backgroundColor
+            );
+
+            requestAnimationFrame(() => {
+              resizeCanvasAction();
+              applyTextValuesAndImages();
+              // Double-check background color after render
+              log('Background color after render', canvas.backgroundColor);
+            });
+          }
+
+          // Helper function to apply text values and update images
+          function applyTextValuesAndImages() {
+            // Add null check at the beginning of the function
+            if (!canvas) {
+              log(
+                'Canvas is null, skipping text values and images application'
+              );
+              return;
+            }
+
+            log('Applying text values and images');
+
+            // Store the current background color before any operations
+            const currentBgColor =
+              canvas.backgroundColor ||
+              parsedBgColor ||
+              templateBgColor ||
+              '#FFFFFF';
+
+            if (initialTextValues && canvas) {
+              applyTextValuesToCanvas(canvas, initialTextValues);
+
+              if (initialTextValues.deceased_cover_photo) {
+                const imgObj = canvas
+                  .getObjects()
+                  .find(
+                    (obj) =>
+                      obj.type === 'image' &&
+                      (obj as any).name === 'deceased_cover_photo'
+                  ) as any;
+
+                if (imgObj) {
+                  const imgElement = new Image();
+                  imgElement.crossOrigin = 'anonymous';
+                  imgElement.onload = () => {
+                    // Add null check here too since this is an async callback
+                    if (!canvas) return;
+
+                    imgObj.setElement(imgElement);
+                    // Restore background color after image operations
+                    canvas.backgroundColor = currentBgColor;
+                    canvas.requestRenderAll();
+                  };
+                  imgElement.src = initialTextValues.deceased_cover_photo;
+                }
+              }
+            }
+
+            // Ensure background color is preserved after all operations
+            canvas.backgroundColor = currentBgColor;
+
+            canvas.requestRenderAll();
+            // Final background color check with more details
+            log('Final background color check', {
+              backgroundColor: canvas.get('backgroundColor'),
+              backgroundColorDirect: canvas.backgroundColor,
+              backgroundImage: !!canvas.backgroundImage,
+              backgroundImageType: canvas.backgroundImage
+                ? canvas.backgroundImage.type
+                : 'none',
+              canvasElement: canvas.getElement().style.backgroundColor,
+              preservedBgColor: currentBgColor
+            });
           }
         });
       } catch (err) {
@@ -261,85 +412,15 @@ export default function CanvasApp({
     };
 
     loadTemplate();
-  }, [canvas, templateData, initialTextValues]);
-
-  const addRectangle = () => {
-    if (!canvas) return;
-    const rect = new Rect({
-      top: 100,
-      left: 50,
-      width: 100,
-      height: 60,
-      fill: '#D84D42'
-    });
-    canvas.add(rect);
-    canvas.requestRenderAll();
-  };
-
-  const addCircle = () => {
-    if (!canvas) return;
-    const circle = new Circle({
-      top: 150,
-      left: 150,
-      radius: 50,
-      fill: '#0000FF'
-    });
-    canvas.add(circle);
-    canvas.requestRenderAll();
-  };
-
-  const addText = () => {
-    if (!canvas) return;
-    const textbox = new Textbox('New Text', {
-      left: 100,
-      top: 100,
-      fill: '#D84D42',
-      width: 200,
-      minWidth: 50
-    });
-    const resizeText = () => {
-      const rawWidth = textbox.calcTextWidth();
-      const newW = Math.max(50, rawWidth + 10);
-      textbox.set({ width: newW });
-      textbox.setCoords();
-      canvas.requestRenderAll();
-    };
-    textbox.on('changed', resizeText);
-    textbox.on('editing:exited', resizeText);
-    canvas.add(textbox);
-    canvas.setActiveObject(textbox);
-    textbox.enterEditing();
-  };
-
-  const deleteSelectedObject = () => {
-    if (!canvas) return;
-    const obj = canvas.getActiveObject();
-    if (obj) {
-      canvas.remove(obj);
-      canvas.discardActiveObject();
-      canvas.requestRenderAll();
-    } else {
-      toast.error('No object selected');
-    }
-  };
+  }, [canvas, templateData, viewSide]);
 
   return (
     <div className="App">
       <div className="flex flex-col gap-2 bg-[#333] p-2 rounded fixed top-1/2 -translate-y-1/2 left-4 empty:hidden z-50">
         <div className="grid grid-cols-3">
-          <Button
-            onClick={addRectangle}
-            variant="ghost"
-            className="text-amber-50"
-          >
-            <Square />
-          </Button>
-          <Button onClick={addCircle} variant="ghost" className="text-amber-50">
-            <CircleIcon />
-          </Button>
-          <Button onClick={addText} variant="ghost" className="text-amber-50">
-            <Type />
-          </Button>
+          <AddRectangle canvas={canvas} />
+          <AddCircle canvas={canvas} />
+          <AddText canvas={canvas} />
           <Images canvas={canvas} canvasRef={canvasRef} />
           <Button
             onClick={() => setShowTemplates(!showTemplates)}
@@ -348,13 +429,7 @@ export default function CanvasApp({
           >
             <LayoutGrid />
           </Button>
-          <Button
-            onClick={deleteSelectedObject}
-            variant="ghost"
-            className="text-amber-50"
-          >
-            <Trash />
-          </Button>
+          <DeleteObject canvas={canvas} />
         </div>
         <SaveLoad
           canvas={canvas}

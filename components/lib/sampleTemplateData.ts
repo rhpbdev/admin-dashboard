@@ -1,38 +1,11 @@
 // app/editor/sampleTemplateData.ts
-
 import { Gradient } from 'fabric';
-
-// If not defined elsewhere:
-export interface YourSpecificTemplateType {
-  id: string;
-  name: string;
-  width: number;
-  height: number;
-  backgroundColor?: string;
-  fabricJSON?: string; // Contains stringified Fabric.js canvas state,
-  outsideJSON?: string;
-  insideJSON?: string;
-  style?: string;
-}
-
-export const goldGradient = new Gradient({
-  type: 'linear',
-  gradientUnits: 'pixels',
-  coords: { x1: 0, y1: 0, x2: 375, y2: 0 },
-  colorStops: [
-    { offset: 0, color: 'rgb(180,137,13)' },
-    { offset: 0.25, color: 'rgb(240,224,132)' },
-    { offset: 0.5, color: 'rgb(181,137,13)' },
-    { offset: 0.75, color: 'rgb(240,224,132)' },
-    { offset: 1, color: 'rgb(180,137,13)' }
-  ]
-});
+import { YourSpecificTemplateType } from '@/components/canvas/types/canvas';
+import { goldGradient } from './gradients';
 
 const greenEleganceShadow = 'rgba(0,0,0,1) 1px 1px 1px';
-
-const centerMiddlePanelTrifold = 462.5; // Center of the middle panel for trifolds
-
-const VERSION = '6.6.4'; // Using a consistent version for Fabric objects
+const centerMiddlePanelTrifold = 462.5;
+const VERSION = '6.6.4';
 
 export const sampleProgramTemplates: YourSpecificTemplateType[] = [
   // ==============================================================
@@ -374,6 +347,466 @@ export const sampleProgramTemplates: YourSpecificTemplateType[] = [
         fit: 'contain',
         src: '/green-elegance-smol.jpg',
         name: 'background_image_green_elegance'
+      },
+      objects: [
+        // --- Panel 3: Front Cover (Rightmost: X from 850 to 1275) --- Panel Width = 425
+        {
+          type: 'Image',
+          src: '/dove-01.png',
+          name: 'dove_image_front',
+          left: 830,
+          top: 120,
+          scaleX: 0.85,
+          scaleY: 0.85,
+          angle: 4.7812
+          // NOTE: Loading external images or large base64 might be slow. Consider placeholders first.
+        },
+        {
+          type: 'Image',
+          src: '/brianna-richards-pic.png',
+          name: 'deceased_cover_photo',
+          left: 865,
+          top: 60,
+          scaleX: 0.75,
+          scaleY: 0.75
+          // NOTE: Loading external images or large base64 might be slow. Consider placeholders first.
+        },
+        {
+          type: 'textbox',
+          text: 'Celebration',
+          left: 760,
+          top: 50,
+          width: 375,
+          fill: 'white',
+          shadow: greenEleganceShadow,
+          fontSize: 21,
+          fontFamily: 'Georgia',
+          fontStyle: 'italic',
+          textAlign: 'center'
+        },
+        {
+          type: 'textbox',
+          text: 'of',
+          left: 770,
+          top: 70,
+          width: 375,
+          fill: 'white',
+          shadow: greenEleganceShadow,
+          fontSize: 21,
+          fontFamily: 'Georgia',
+          fontStyle: 'italic',
+          textAlign: 'center'
+        },
+        {
+          type: 'textbox',
+          text: 'for',
+          left: 745,
+          top: 150,
+          width: 375,
+          fill: 'white',
+          shadow: greenEleganceShadow,
+          fontSize: 21,
+          fontFamily: 'Georgia',
+          fontStyle: 'italic',
+          textAlign: 'center'
+        },
+        {
+          type: 'textbox',
+          text: 'Life',
+          left: 760,
+          top: 100,
+          width: 375,
+          fill: goldGradient,
+          padding: 10,
+          shadow: greenEleganceShadow,
+          fontSize: 42,
+          fontFamily: 'Aston Script Pro Bold',
+          fontStyle: 'italic',
+          textAlign: 'center'
+        },
+        {
+          type: 'textbox',
+          version: VERSION,
+          originX: 'center',
+          originY: 'top',
+          left: 1062.5,
+          top: 412.5,
+          width: 375,
+          fill: goldGradient,
+          shadow: greenEleganceShadow,
+          text: 'Name Here',
+          fontSize: 48,
+          fontFamily: 'Aston Script Pro Bold',
+          textAlign: 'center',
+          name: 'name_of_deceased',
+          editable: false
+        },
+        {
+          type: 'textbox',
+          originX: 'center',
+          originY: 'top',
+          left: 962.5,
+          top: 507.5,
+          width: 300,
+          fill: goldGradient,
+          shadow: greenEleganceShadow,
+          text: 'Sunrise',
+          fontSize: 24, // Scaled
+          fontFamily: 'Aston Script Pro Bold',
+          textAlign: 'center',
+          name: 'sunrise',
+          editable: false
+        },
+        {
+          type: 'textbox',
+          originX: 'center',
+          originY: 'top',
+          left: 1162.5,
+          top: 507.5,
+          width: 300,
+          fill: goldGradient,
+          shadow: greenEleganceShadow,
+          text: 'Sunset',
+          fontSize: 24,
+          fontFamily: 'Aston Script Pro Bold',
+          textAlign: 'center',
+          name: 'sunset',
+          editable: false
+        },
+        {
+          type: 'textbox',
+          text: 'XX-XX-XXXX',
+          name: 'sunrise_date',
+          left: 840,
+          top: 550,
+          width: 250,
+          fill: '#FFFFFF',
+          shadow: greenEleganceShadow,
+          fontSize: 22.5,
+          fontFamily: 'Georgia',
+          textAlign: 'center',
+          editable: false
+        },
+        {
+          type: 'textbox',
+          text: 'XX-XX-XXXX',
+          name: 'sunset_date',
+          left: 1040,
+          top: 550,
+          width: 250,
+          fill: '#FFFFFF',
+          shadow: greenEleganceShadow,
+          fontSize: 22.5,
+          fontFamily: 'Georgia',
+          textAlign: 'center',
+          editable: false
+        },
+        {
+          type: 'textbox',
+          text: 'Wednesday, March 23, 2025',
+          name: 'service_date',
+          left: 880,
+          top: 608,
+          width: 375,
+          fill: '#FFFFFF',
+          shadow: greenEleganceShadow,
+          fontSize: 22.5,
+          fontFamily: 'Georgia',
+          textAlign: 'center'
+        },
+        {
+          type: 'textbox',
+          text: '12:00 PM',
+          name: 'service_time',
+          left: 880,
+          top: 635,
+          width: 375,
+          fill: '#FFFFFF',
+          shadow: greenEleganceShadow,
+          fontSize: 22.5,
+          fontFamily: 'Georgia',
+          textAlign: 'center'
+        },
+        {
+          type: 'textbox',
+          version: VERSION,
+          originX: 'center',
+          originY: 'top',
+          left: 1062.5,
+          top: 685,
+          width: 375, // Scaled approx
+          fill: '#FFFFFF',
+          shadow: greenEleganceShadow,
+          text: 'RHPB Baptist Church\n1024 9th Ave N\nRocky Heights, AL 35001',
+          fontSize: 20, // Scaled
+          fontFamily: 'Georgia',
+          textAlign: 'center',
+          lineHeight: 1.2,
+          name: 'front_church_address'
+        },
+        {
+          type: 'textbox',
+          version: VERSION,
+          originX: 'center',
+          originY: 'top',
+          left: 1062.5,
+          top: 760,
+          width: 375, // Scaled approx
+          fill: '#FFFFFF',
+          shadow: greenEleganceShadow,
+          text: 'Rev. James Carmichael — Officiating',
+          fontSize: 20, // Scaled
+          fontFamily: 'Georgia',
+          fontStyle: 'italic',
+          textAlign: 'center',
+          name: 'front_officiant'
+        },
+
+        // --- Panel 2: Middle Panel (X from 425 to 850) ---
+        {
+          type: 'textbox',
+          left: centerMiddlePanelTrifold,
+          top: 62.5,
+          width: 350,
+          fill: goldGradient,
+          shadow: greenEleganceShadow,
+          text: 'Pallbearers',
+          fontSize: 34,
+          fontFamily: 'Aston Script Pro Bold',
+          textAlign: 'center'
+        },
+        {
+          type: 'textbox',
+          left: centerMiddlePanelTrifold,
+          top: 110,
+          width: 350,
+          fill: '#FFFFFF',
+          shadow: greenEleganceShadow,
+          text: 'Friends of the Family',
+          fontSize: 18,
+          fontFamily: 'Georgia',
+          textAlign: 'center'
+        },
+        {
+          type: 'textbox',
+          left: centerMiddlePanelTrifold,
+          top: 182.5,
+          width: 350,
+          fill: goldGradient,
+          shadow: greenEleganceShadow,
+          text: 'Flower Bearers',
+          fontSize: 34,
+          fontFamily: 'Aston Script Pro Bold',
+          textAlign: 'center'
+        },
+        {
+          type: 'textbox',
+          left: centerMiddlePanelTrifold,
+          top: 230,
+          width: 350,
+          fill: '#FFFFFF',
+          shadow: greenEleganceShadow,
+          text: 'Friends of the Family',
+          fontSize: 18,
+          fontFamily: 'Georgia',
+          textAlign: 'center',
+          name: 'mid_flowerbearers_names_2'
+        },
+        {
+          type: 'textbox',
+          version: VERSION,
+          left: centerMiddlePanelTrifold,
+          top: 302.5,
+          width: 350,
+          fill: goldGradient,
+          shadow: greenEleganceShadow,
+          text: 'Burial',
+          fontSize: 34,
+          fontFamily: 'Aston Script Pro Bold',
+          textAlign: 'center',
+          name: 'mid_burial_title'
+        },
+        {
+          type: 'textbox',
+          left: centerMiddlePanelTrifold,
+          top: 350,
+          width: 350, // Scaled approx
+          fill: '#FFFFFF',
+          shadow: greenEleganceShadow,
+          text: 'Rocky Heights Memorial Garden',
+          fontSize: 18, // Scaled: 90*0.25
+          fontFamily: 'Georgia',
+          textAlign: 'center',
+          name: 'mid_burial_location'
+        },
+        {
+          type: 'textbox',
+          version: VERSION,
+          originX: 'center',
+          originY: 'top',
+          left: 637.5,
+          top: 500,
+          width: 375, // Scaled: 2000*0.25
+          fill: goldGradient,
+          shadow: greenEleganceShadow,
+          text: 'Acknowledgement',
+          fontSize: 27.5, // Scaled: 110*0.25
+          fontFamily: 'Aston Script Pro Bold',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          name: 'mid_ack_title'
+        },
+        {
+          type: 'textbox',
+          version: VERSION,
+          originX: 'center',
+          originY: 'top',
+          left: 637.5,
+          top: 550,
+          width: 350, // Scaled approx
+          fill: '#FFFFFF',
+          shadow: greenEleganceShadow,
+          text: 'The family of Jane Doe would like to thank everyone for their kind expressions. Your phone calls, visits, flowers, thoughts, and prayers have all helped greatly during our time of bereavement. May God continue to bless each of you is our prayer.',
+          fontSize: 20, // Scaled: 80*0.25
+          fontFamily: 'Georgia',
+          fontStyle: 'italic',
+          textAlign: 'center',
+          lineHeight: 1.5,
+          name: 'mid_ack_text'
+        },
+
+        // --- Panel 1: Left Panel (Back Page when folded - X from 0 to 425) ---
+        {
+          type: 'rect',
+          version: VERSION,
+          left: 48,
+          bottom: 10,
+          width: 325,
+          height: 1275,
+          fill: '#04291d',
+          opacity: '.5',
+          name: 'green_bar',
+          cornerColor: 'rgb(178,204,0)'
+        },
+        {
+          type: 'textbox',
+          version: VERSION,
+          left: 48,
+          top: 80,
+          width: 325, // Scaled: (1700 / 2)*0.25, 250*0.25, 1500*0.25
+          fill: goldGradient,
+          shadow: greenEleganceShadow,
+          text: "God's Garden",
+          fontSize: 37.5, // Scaled: 150*0.25
+          fontFamily: 'Aston Script Pro Bold',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          name: 'left_poem_title',
+          lockMovementX: true
+        },
+        {
+          type: 'textbox',
+          version: VERSION,
+          left: 48,
+          top: 160,
+          width: 325,
+          height: 500,
+          fill: '#FFFFFF',
+          shadow: greenEleganceShadow,
+          text: `God looked around His garden,
+And He found an empty place.
+He then looked down upon the Earth
+And saw your precious face.
+He put His arms around you
+And lifted you to rest.
+God’s garden must be beautiful;
+He always takes the best.
+He knew that you were suffering;
+He knew you were in pain.
+He knew you would never, ever
+Get well on Earth again.
+So He closed your weary eyelids
+And whispered, “Peace be thine.”
+Then He took you up to Heaven
+With hands so gentle and kind.
+It broke our hearts to lose you,
+But you did not go alone.
+Part of us went with you
+The day God welcomed you home.`,
+          fontSize: 18,
+          fontFamily: 'Georgia',
+          textAlign: 'center',
+          fontStyle: 'italic',
+          lineHeight: 1.4,
+          name: 'left_poem_text',
+          lockMovementX: true
+        }
+      ]
+    }),
+    insideJSON: JSON.stringify({
+      version: '6.0.0',
+      backgroundImage: {
+        type: 'image',
+        version: '6.0.0',
+        originX: 'left',
+        originY: 'top',
+        left: 0,
+        top: 0,
+        width: 1275,
+        height: 825,
+        src: '/green-elegance-smol.jpg',
+        name: 'background_image_green_elegance'
+      },
+      objects: [
+        {
+          type: 'textbox',
+          name: 'left_poem_title',
+          left: 48,
+          top: 62.5,
+          width: 325,
+          fill: '#FFFFFF',
+          text: "God's Garden",
+          fontSize: 37.5,
+          fontFamily: 'Georgia',
+          textAlign: 'center'
+        },
+        {
+          type: 'textbox',
+          name: 'left_poem_text',
+          left: 48,
+          top: 137.5,
+          width: 325,
+          fill: '#FFFFFF',
+          text: 'God looked around His garden...\n(...rest of the poem...)',
+          fontSize: 18,
+          fontFamily: 'Georgia',
+          textAlign: 'center',
+          fontStyle: 'italic',
+          lineHeight: 1.2
+        }
+      ]
+    })
+  },
+  {
+    id: 'trifold-blue-elegance',
+    name: 'Blue Elegance Trifold',
+    style: 'blue-elegance',
+    width: 1275,
+    height: 825,
+    outsideJSON: JSON.stringify({
+      version: VERSION,
+      backgroundImage: {
+        type: 'image',
+        version: VERSION,
+        originX: 'left',
+        originY: 'top',
+        left: 0,
+        top: 0,
+        width: 1275,
+        height: 825, // Resized
+        fit: 'contain',
+        src: '/blue-and-gold-elegance.jpg',
+        name: 'background_image_blue_elegance'
       },
       objects: [
         // --- Panel 3: Front Cover (Rightmost: X from 850 to 1275) --- Panel Width = 425

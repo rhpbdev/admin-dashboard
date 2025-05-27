@@ -1,9 +1,11 @@
 // hooks/useDeceasedCoverPhoto.ts
 import { useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
+import { useDeceasedInfoContext } from 'context/DeceasedInfoContext';
 
 export function useDeceasedCoverPhoto(canvas: FabricCanvas | null) {
   const [coverPhoto, setCoverPhoto] = useState<string | null>(null);
+  const { updateField } = useDeceasedInfoContext();
 
   // Load image from localStorage on mount
   useEffect(() => {
@@ -43,10 +45,7 @@ export function useDeceasedCoverPhoto(canvas: FabricCanvas | null) {
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      console.log('FileReader event:', event);
-
       const dataUrl = event.target?.result as string;
-      console.log('Generated dataUrl:', dataUrl);
 
       if (!dataUrl) {
         console.warn('Failed to read file as Data URL.');
@@ -54,6 +53,7 @@ export function useDeceasedCoverPhoto(canvas: FabricCanvas | null) {
       }
 
       setCoverPhoto(dataUrl);
+      updateField({ coverPhoto: dataUrl }); // ✅ Update context too
 
       const saved = JSON.parse(localStorage.getItem('deceasedInfo') || '{}');
       localStorage.setItem(

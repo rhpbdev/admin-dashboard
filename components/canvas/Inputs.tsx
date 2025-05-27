@@ -4,63 +4,16 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Canvas as FabricCanvas, Textbox } from 'fabric';
 import { format, parseISO } from 'date-fns';
 import { useDeceasedCoverPhoto } from 'hooks/useDeceasedCoverPhoto';
-import { useDeceasedInfo } from 'hooks/useDeceasedInfo';
+import { useDeceasedInfoContext } from 'context/DeceasedInfoContext';
 
 interface CanvasProps {
   canvas: FabricCanvas | null;
 }
 
 const Inputs = ({ canvas }: CanvasProps) => {
-  const [deceasedName, setDeceasedName] = useState('');
-  const [sunriseDate, setSunriseDate] = useState('');
-  const [sunsetDate, setSunsetDate] = useState('');
-  const [serviceDate, setServiceDate] = useState('');
-  const [serviceFormatted, setServiceFormatted] = useState('');
-
-  const { coverPhoto, handleCoverPhotoUpload } = useDeceasedCoverPhoto(canvas);
-  const { get, set } = useDeceasedInfo();
-
-  useEffect(() => {
-    const saved = get();
-    if (!saved) return;
-
-    setDeceasedName(saved.name ?? '');
-    setSunriseDate(saved.sunrise ?? '');
-    setSunsetDate(saved.sunset ?? '');
-    setServiceDate(saved.service ?? '');
-    setServiceFormatted(saved.serviceFormatted ?? '');
-  }, [canvas, get]);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (
-        deceasedName &&
-        sunriseDate &&
-        sunsetDate &&
-        serviceDate &&
-        coverPhoto
-      ) {
-        set({
-          name: deceasedName,
-          sunrise: sunriseDate,
-          sunset: sunsetDate,
-          service: serviceDate,
-          serviceFormatted,
-          coverPhoto
-        });
-      }
-    }, 400);
-
-    return () => clearTimeout(timeout);
-  }, [
-    deceasedName,
-    sunriseDate,
-    sunsetDate,
-    serviceDate,
-    serviceFormatted,
-    coverPhoto,
-    set
-  ]);
+  const { info, updateField } = useDeceasedInfoContext();
+  const [localCoverPhoto, setLocalCoverPhoto] = useState(info.coverPhoto ?? '');
+  const { handleCoverPhotoUpload } = useDeceasedCoverPhoto(canvas);
 
   const updateTextboxValue = useCallback(
     (name: string, value: string) => {
@@ -78,29 +31,38 @@ const Inputs = ({ canvas }: CanvasProps) => {
     [canvas]
   );
 
+  const handleDateChange = (val: string) => {
+    let formatted = val;
+    try {
+      formatted = format(parseISO(val), 'PPPP');
+    } catch {}
+    updateField({ service: val, serviceFormatted: formatted });
+    updateTextboxValue('service_date', formatted);
+  };
+
   return (
     <div className="p-6 bg-white shadow mt-6 max-w-2xl mx-auto rounded space-y-4">
       <InputField
         label="Name of Deceased"
-        value={deceasedName}
+        value={info.name}
         onChange={(val) => {
-          setDeceasedName(val);
+          updateField({ name: val });
           updateTextboxValue('name_of_deceased', val);
         }}
       />
       <InputField
         label="Sunrise"
-        value={sunriseDate}
+        value={info.sunrise}
         onChange={(val) => {
-          setSunriseDate(val);
+          updateField({ sunrise: val });
           updateTextboxValue('sunrise_date', val);
         }}
       />
       <InputField
         label="Sunset"
-        value={sunsetDate}
+        value={info.sunset}
         onChange={(val) => {
-          setSunsetDate(val);
+          updateField({ sunset: val });
           updateTextboxValue('sunset_date', val);
         }}
       />
@@ -109,20 +71,8 @@ const Inputs = ({ canvas }: CanvasProps) => {
         <input
           type="date"
           className="w-full border px-3 py-2 rounded"
-          value={serviceDate}
-          onChange={(e) => {
-            const val = e.target.value;
-            setServiceDate(val);
-
-            try {
-              const formatted = format(parseISO(val), 'PPPP');
-              setServiceFormatted(formatted);
-              updateTextboxValue('service_date', formatted);
-            } catch {
-              setServiceFormatted(val);
-              updateTextboxValue('service_date', val);
-            }
-          }}
+          value={info.service}
+          onChange={(e) => handleDateChange(e.target.value)}
         />
       </div>
       <div>
@@ -133,7 +83,10 @@ const Inputs = ({ canvas }: CanvasProps) => {
           className="w-full border px-3 py-2 rounded"
           onChange={(e) => {
             const file = e.target.files?.[0];
-            if (file) handleCoverPhotoUpload(file);
+            if (file) {
+              handleCoverPhotoUpload(file);
+              // ImageKit upload/restore will also update localStorage
+            }
           }}
         />
       </div>

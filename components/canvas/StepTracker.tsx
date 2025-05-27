@@ -2,16 +2,18 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import { EditorStep } from '@/components/canvas/types/canvas';
 
 interface StepTrackerProps {
-  currentStep: 'program' | 'accessory' | 'finalize';
+  currentStep: EditorStep;
 }
 
-const steps = ['program', 'accessory', 'finalize'];
+const steps = ['program', 'accessory', 'review', 'finalize'];
 
-const labels: Record<StepTrackerProps['currentStep'], string> = {
+const labels: Record<EditorStep, string> = {
   program: 'Program',
-  accessory: 'Accessory',
+  accessory: 'Accessories',
+  review: 'Review',
   finalize: 'Finalize'
 };
 
